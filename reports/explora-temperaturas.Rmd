@@ -11,6 +11,8 @@ library(tidyverse)
 library(here)
 library(lubridate)
 library(ggbeeswarm)
+library(ggplot2)
+library(plotly)
 theme_set(theme_bw())
 ```
 
@@ -25,6 +27,14 @@ glimpse(climas)
 
 ### Onde é mais quente?
 
+```{r}
+ggplot(climas, aes(x = cidade, y = tmedia)) + geom_boxplot(width = .2)
+jp <- climas %>% filter(cidade == "João Pessoa")
+cg <- climas %>% filter(cidade == "Campina Grande")
+
+summary(jp$tmedia)
+summary(cg$tmedia)
+```
 
 ### As temperaturas máximas semanais (o pico do calor) são tão diferentes quanto as médias? Mais?  
 
