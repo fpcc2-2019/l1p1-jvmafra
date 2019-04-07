@@ -6,7 +6,7 @@ output:
 theme: sandstone
 ---
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 library(tidyverse)
 library(here)
 library(lubridate)
@@ -16,43 +16,137 @@ library(plotly)
 theme_set(theme_bw())
 ```
 
-```{r read}
+```{r read, message=FALSE, warning=FALSE}
 climas = read_csv(here::here("data/clima_cg_jp-semanal.csv"), 
                   col_types = "cTdddddd")
 
-glimpse(climas)
 ```
 
 ## Temperatura
 
 ### Onde é mais quente?
 
-```{r}
-ggplot(climas, aes(x = cidade, y = tmedia)) + geom_boxplot(width = .2)
-jp <- climas %>% filter(cidade == "João Pessoa")
-cg <- climas %>% filter(cidade == "Campina Grande")
+Os boxplots mostram a distruibuição das temperaturas médias semanais de cada cidade. Como pode-se ver, em geral, João Pessoa apresenta temperaturas maiores. Obviamente, existem semanas em que a temperatura média de CG foi acima do normal e existem semanas em que a temperatura média de JP foi abaixo do normal. Para esse último caso, podemos ver isso claramente através de dois pontos que estão fora e abaixo do boxplot.
 
-summary(jp$tmedia)
-summary(cg$tmedia)
+```{r message=FALSE, warning=FALSE}
+ggplotly(ggplot(climas, aes(x = cidade, y = tmedia)) + geom_boxplot(width = .2, fill = "#FF6666") + ylab("Temperatura média semanal"))
 ```
 
-### As temperaturas máximas semanais (o pico do calor) são tão diferentes quanto as médias? Mais?  
+O gráfico de barras mostra a média das temperaturas médias semanais por ano nos últimos 10 anos, comparando as duas cidades. Ele reforça a resposta de de que em geral as temperaturas em JP são maiores que em CG.
 
+A média em 2019 está maior que em outros anos para as duas cidades pois ainda não temos os dados do período do inverno.
+
+```{r message=FALSE, warning=FALSE}
+agrupado.por.ano <- climas %>% filter(ano >= 2008) %>% group_by(ano, cidade) %>% summarise(temp_media = mean(tmedia))
+
+ggplot(data = agrupado.por.ano, aes(x = ano, y = temp_media, group = cidade, fill = cidade)) + geom_bar(stat = "identity", position = "dodge") + ylab("Média das temperaturas médias semanais") + xlab("Ano") + 
+    scale_x_discrete(limits = c(2008:2019))
+```
 
 ### Quais os meses mais quentes e mais frios? 
 
+Os boxplots mostram uma tendência para temperaturas menores em junho, julho e agosto e temperaturas maiores em dezembro, janeiro, fevereiro e março, com pouca diferença entre eles.
+
+O gráfico de barras mostra a média das temperaturas médias semanais no mês (incluindo as duas cidades e todos os anos observados). Confirma-se a tendência observada nos boxplots.
+
+```{r message=FALSE, warning=FALSE}
+agrupado.por.mes <- climas %>% group_by(mes) %>% summarise(temp_media = mean(tmedia))
+
+ggplot(data = climas, aes(x = mes, y = tmedia, group = mes)) + geom_boxplot(fill = "#FF6666") + scale_x_discrete(limits = c(1:12)) + xlab("Mês") + ylab("Temperatura média semanal")
+
+ggplot(data = agrupado.por.mes, aes(x = mes, y = temp_media)) + geom_bar(stat = "identity", position = "dodge", fill = "#FF6666") + ylab("Média das temperaturas médias semanais") + xlab("Mês") + 
+    scale_x_discrete(limits = c(1:12))
+
+```
 
 ### Qual foi o São João  mais frio de CG que está nos nossos dados?
 
+O gráfico mostra a média das temperaturas médias semanais por ano considerando apenas o mês de junho. Se formos falar de números absolutos, 2004 foi o ano com menor média, com uma diferença muito pequena para outros anos, como o segundo colocado 2008: 22,11ºC x 22,19ºC
 
+Em 2000 e 2001 não temos dados.
+
+```{r message=FALSE, warning=FALSE}
+cg.junho <- climas %>% filter(cidade == "Campina Grande" & mes == 6)
+junho.agrupado.por.ano <- cg.junho %>% group_by(ano) %>% summarise(temp_media = mean(tmedia))
+
+ggplot(data = junho.agrupado.por.ano, aes(x = ano, y = temp_media)) + geom_bar(stat = "identity", position = "dodge", fill = "#FF6666") + ylab("Média das temperaturas médias semanais") + xlab("Ano") + 
+    scale_x_discrete(limits = c(1995:2018)) + coord_flip()
+```
+
+Outra análise pode ser feita considerando a média das temperaturas mínimas observadas em cada semana de junho. A diferença continua muito pequena, mas em números absolutos 2008 teve a menor média de temperaturas mínimas.
+
+```{r message=FALSE, warning=FALSE}
+junho.agrupado.por.ano.tmin <- cg.junho %>% group_by(ano) %>% summarise(temp_media = mean(tmin))
+
+ggplot(data = junho.agrupado.por.ano, aes(x = ano, y = temp_media)) + geom_bar(stat = "identity", position = "dodge", fill = "#FF6666") + ylab("Média das temperaturas mínimas semanais") + xlab("Ano") + 
+    scale_x_discrete(limits = c(1995:2018)) + coord_flip()
+```
+
+Podemos observar também a distribuição das temperaturas médias do mês junho sem calcular a média delas. Nessa escala, temos uma noção mais clara que alguns anos tiveram médias semanais maiores que outros, apesar de na prática a diferença ser pouca. 2004 realmente aparece entre as temperaturas mais baixas. Por essa visualização, pode-se observar que 2008 tem um valor de temperatura média semanal muito baixo, impactando sua média e consequentemente os gráficos anteriores que levam em conta a média das médias semanais.
+
+```{r message=FALSE, warning=FALSE}
+ggplot(cg.junho, aes(x = ano, y = tmedia, group = ano)) + geom_boxplot(fill = "#FF6666") + scale_x_discrete(limits = c(1995:2018)) + coord_flip() + ylab("Temperatura média semanal")
+```
 
 ## Chuva
 
 ### Quanto chove por semana em JP e CG?
 
-Como é a distribuição do volume de chuvas por semana em JP e CG? A chuva varia mais ou menos que a temperatura? O formato da distribuição é igual? 
+Os formatos das distribuições são diferentes. O primeiro gráfico mostra a distribuição das temperaturas, enquanto que o segundo mostra a distribuição das chuvas.
+
+Para o primeiro caso, temos dois "picos", ou seja, duas faixas de temperatura que ocorrem frequentemente. Para o segundo caso, temos uma cauda longa a direita, indicando que temos pouca chuva na maioria dos casos, mas casos isolados em que a quantidade de chuva foi muito grande.
+
+```{r message=FALSE, warning=FALSE}
+ggplot(climas, aes(x = tmedia)) + geom_bar(stat = "bin", fill = "#FF6666") + xlab("Temperatura média semanal")
+
+ggplot(climas, aes(x = chuva)) + geom_bar(stat = "bin", fill = "#FF6666") + xlab("Quantidade de chuva semanal (mm)")
+```
+
+Agora temos a distribuição de chuva por cidade usando boxplot. A variabilidade da quantidade de chuva é bem maior em JP, temos muitos pontos fora do boxplot, indicando que houveram semanas em que choveu muito além do normal. Em CG isso também acontece, mas em quantidade menor.
+
+```{r message=FALSE, warning=FALSE}
+ggplotly(ggplot(climas, aes(x = cidade, y = chuva)) + geom_boxplot(width = .2, fill = "#FF6666") + ylab("Quantidade de chuva (mm)"))
+```
 
 ### No geral, onde chove mais?
 
+O boxplot anterior nos leva a crer sem muito esforço que em geral chove mais em JP. O gráfico de barras abaixo mostra em valores absolutos quanto choveu em cada cidade em todo período observado nos dados. Em JP tivemos mais que o dobro de chuva em relação a CG.
+
+```{r message=FALSE, warning=FALSE}
+chuvas.agrupado.por.cidade <- climas %>% group_by(cidade) %>% summarise(total = sum(chuva))
+
+ggplot(chuvas.agrupado.por.cidade, aes(x = cidade, y = total)) + geom_bar(stat = "identity", fill = "#FF6666") +
+    xlab("Cidade") + ylab("Quantidade total de chuva (em mm)")
+```
+
+Uma análise mais interessante talvez seja observar a média semanal de chuvas por ano em cada cidade. Nos primeiros anos do dado não temos informações sobre CG, então serão considerados apenas os anos de 1993 em diante.
+
+Em todos os anos a média semanal de chuvas foi maior em JP.
+
+```{r message=FALSE, warning=FALSE}
+chuvas.agrupado.por.ano <- climas %>% filter(ano >= 1993) %>% group_by(ano, cidade) %>% summarise(media_chuva = mean(chuva))
+
+ggplot(data = chuvas.agrupado.por.ano, aes(x = ano, y = media_chuva, group = cidade, fill = cidade)) + geom_bar(stat = "identity", position = "dodge") + ylab("Média semanal da quantidade chuva") + xlab("Ano") + 
+    scale_x_discrete(limits = c(1993:2019)) + coord_flip()
+```
+
 ### A distribuição é diferente em meses específicos? 
+
+Avaliando a distribuição das chuvas por mês (considerando as duas cidades como um todo), em geral temos mais chuva no mês de junho (e meses vizinhos) e pouquíssima chuva nos meses entre setembro e dezembro.
+
+```{r message=FALSE, warning=FALSE}
+ggplot(climas, aes(x = mes, y = chuva, group = mes)) + geom_boxplot(fill = "#FF6666") + scale_x_discrete(limits = c(1:12)) + 
+    xlab("Mês") + ylab("Quantidade de chuva (em mm)")
+```
+
+Estendendo a análise anterior, agora podemos agrupar por mês e cidade e checar se em geral temos meses com maior ou menor ocorrência de chuva.
+
+Para ambas as cidades a média semanal de chuvas é maior no mês de junho e bem menor entre setembro e dezembro.
+
+```{r message=FALSE, warning=FALSE}
+chuvas.agrupado.por.mes <- climas %>% filter(ano >= 1993) %>% group_by(mes, cidade) %>% summarise(media_chuva = mean(chuva))
+
+ggplot(data = chuvas.agrupado.por.mes, aes(x = mes, y = media_chuva, group = cidade, fill = cidade)) + geom_bar(stat = "identity", position = "dodge") + ylab("Média semanal da quantidade chuva") + xlab("Mes") + 
+    scale_x_discrete(limits = c(1:12))
+```
 
