@@ -69,8 +69,7 @@ Em 2000 e 2001 não temos dados.
 cg.junho <- climas %>% filter(cidade == "Campina Grande" & mes == 6)
 junho.agrupado.por.ano <- cg.junho %>% group_by(ano) %>% summarise(temp_media = mean(tmedia))
 
-ggplot(data = junho.agrupado.por.ano, aes(x = ano, y = temp_media)) + geom_bar(stat = "identity", position = "dodge", fill = "#FF6666") + ylab("Média das temperaturas médias semanais") + xlab("Ano") + 
-    scale_x_discrete(limits = c(1995:2018)) + coord_flip()
+ggplot(data = junho.agrupado.por.ano, aes(x =  reorder(ano, temp_media), y = temp_media)) + geom_bar(stat = "identity", position = "dodge", fill = "#FF6666") + ylab("Média das temperaturas médias semanais") + xlab("Ano") + coord_flip()
 ```
 
 Outra análise pode ser feita considerando a média das temperaturas mínimas observadas em cada semana de junho. A diferença continua muito pequena, mas em números absolutos 2008 teve a menor média de temperaturas mínimas.
@@ -78,7 +77,7 @@ Outra análise pode ser feita considerando a média das temperaturas mínimas ob
 ```{r message=FALSE, warning=FALSE}
 junho.agrupado.por.ano.tmin <- cg.junho %>% group_by(ano) %>% summarise(temp_media = mean(tmin))
 
-ggplot(data = junho.agrupado.por.ano, aes(x = ano, y = temp_media)) + geom_bar(stat = "identity", position = "dodge", fill = "#FF6666") + ylab("Média das temperaturas mínimas semanais") + xlab("Ano") + 
+ggplot(data = junho.agrupado.por.ano, aes(x = reorder(ano, temp_media), y = temp_media)) + geom_bar(stat = "identity", position = "dodge", fill = "#FF6666") + ylab("Média das temperaturas mínimas semanais") + xlab("Ano") + 
     scale_x_discrete(limits = c(1995:2018)) + coord_flip()
 ```
 
